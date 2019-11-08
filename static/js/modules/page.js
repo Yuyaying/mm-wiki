@@ -39,6 +39,10 @@ var Page = {
                 failed(result.message, result.data);
             }
             if (result.code == 1) {
+                // remove storage
+                var documentId = $("input[name='document_id']").val();
+                var storageId = "mm_wiki_doc_"+documentId;
+                Storage.remove(storageId);
                 successBox(result.message, result.data);
             }
             if (result.redirect.url) {
@@ -139,10 +143,45 @@ var Page = {
             btnAlign: 'c',
             title: "<i class='fa fa-warning'></i><strong> 警告</strong>"
         }, function() {
+            var documentId = $("input[name='document_id']").val();
+            var storageId = "mm_wiki_doc_"+documentId;
+            Storage.remove(storageId);
             parent.location = url
         }, function() {
 
         });
-    }
+    },
 
+    /**
+     * upload attachment
+     */
+    attachment: function (documentId) {
+        layer.open({
+            type: 2,
+            skin: Layers.skin,
+            title: '<strong>附件</strong>',
+            shadeClose: true,
+            shade : 0.1,
+            resize: false,
+            maxmin: false,
+            area: ["900px", "500px"],
+            content: "/attachment/page?document_id="+documentId,
+            padding:"10px"
+        });
+    },
+
+    /**
+     * 错误提示
+     * @param element
+     * @param message
+     */
+    uploadErrorBox: function (element, message) {
+        $(element).html('');
+        $(element).removeClass('hide');
+        $(element).addClass('alert alert-danger');
+        $(element).append('<a class="close" href="#" onclick="$(this).parent().hide();">×</a>');
+        $(element).append('<strong><i class="glyphicon glyphicon-remove-circle"></i> 上传失败：</strong>');
+        $(element).append(message);
+        $(element).show();
+    },
 };

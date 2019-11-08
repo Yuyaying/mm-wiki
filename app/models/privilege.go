@@ -1,26 +1,25 @@
 package models
 
 import (
-	"github.com/snail007/go-activerecord/mysql"
 	"fmt"
+	"github.com/snail007/go-activerecord/mysql"
 	"time"
 )
 
 type Privilege struct {
-
 }
 
 const Table_Privilege_Name = "privilege"
 
 const (
-	Privilege_Type_Menu = "menu"
+	Privilege_Type_Menu       = "menu"
 	Privilege_Type_Controller = "controller"
 
-	Privilege_DisPlay_True = "1"
+	Privilege_DisPlay_True  = "1"
 	Privilege_DisPlay_False = "0"
 )
 
-var Privilege_Default_Ids = []string{"1","2","3","4","5","6","7","8","9"}
+var Privilege_Default_Ids = []string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}
 
 var PrivilegeModel = Privilege{}
 
@@ -53,6 +52,21 @@ func (p *Privilege) GetPrivileges() (privileges []map[string]string, err error) 
 	}
 	privileges = rs.Rows()
 
+	return
+}
+
+func (p *Privilege) GetPrivilegeByTypeControllerAndAction(ty, controller, action string) (privilege map[string]string, err error) {
+	db := G.DB()
+	var rs *mysql.ResultSet
+	rs, err = db.Query(db.AR().From(Table_Privilege_Name).Where(map[string]interface{}{
+		"type":       ty,
+		"controller": controller,
+		"action":     action,
+	}))
+	if err != nil {
+		return
+	}
+	privilege = rs.Row()
 	return
 }
 
@@ -108,7 +122,7 @@ func (p *Privilege) GetTypePrivilegesByDisplayPrivilegeIds(display string, privi
 	db := G.DB()
 	var rs *mysql.ResultSet
 	rs, err = db.Query(db.AR().From(Table_Privilege_Name).Where(map[string]interface{}{
-		"is_display": display,
+		"is_display":   display,
 		"privilege_id": privilegeIds,
 	}).OrderBy("sequence", "ASC"))
 	if err != nil {
@@ -196,6 +210,26 @@ func (p *Privilege) Insert(privilege map[string]interface{}) (id int64, err erro
 		return
 	}
 	id = rs.LastInsertId
+	return
+}
+
+func (p *Privilege) InsertNotExists(privilege map[string]interface{}) (id int64, err error) {
+
+	privilege["create_time"] = time.Now().Unix()
+	privilege["update_time"] = time.Now().Unix()
+	db := G.DB()
+	rs, err := db.Query(db.AR().From(Table_Privilege_Name).Where(map[string]interface{}{
+		"type":       privilege["type"],
+		"controller": privilege["controller"],
+		"action":     privilege["action"],
+	}))
+	if rs.Len() == 0 {
+		rs, err = db.Exec(db.AR().Insert(Table_Privilege_Name, privilege))
+		if err != nil {
+			return
+		}
+		id = rs.LastInsertId
+	}
 	return
 }
 

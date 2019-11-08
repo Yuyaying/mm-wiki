@@ -1,14 +1,17 @@
 package controllers
 
 import (
-	"mm-wiki/app/models"
-	"strings"
-	"mm-wiki/app/utils"
-	"regexp"
-	"github.com/astaxie/beego/context"
-	"github.com/pkg/errors"
-	"github.com/astaxie/beego"
+	"errors"
 	"fmt"
+	"mm-wiki/app"
+	"mm-wiki/app/models"
+	"mm-wiki/app/utils"
+	"os"
+	"path/filepath"
+	"regexp"
+	"strings"
+
+	"github.com/astaxie/beego"
 )
 
 type PageController struct {
@@ -25,7 +28,7 @@ func (this *PageController) View() {
 
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(document) == 0 {
@@ -35,7 +38,7 @@ func (this *PageController) View() {
 	spaceId := document["space_id"]
 	space, err := models.SpaceModel.GetSpaceBySpaceId(spaceId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 所在空间失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 所在空间失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(space) == 0 {
@@ -50,7 +53,7 @@ func (this *PageController) View() {
 	// get parent documents by document
 	parentDocuments, pageFile, err := models.DocumentModel.GetParentDocumentsByDocument(document)
 	if err != nil {
-		this.ErrorLog("查找父文档失败："+err.Error())
+		this.ErrorLog("查找父文档失败：" + err.Error())
 		this.ViewError("查找父文档失败！")
 	}
 	if len(parentDocuments) == 0 {
@@ -60,14 +63,14 @@ func (this *PageController) View() {
 	// get document content
 	documentContent, err := utils.Document.GetContentByPageFile(pageFile)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("文档不存在！")
 	}
 
 	// get edit user and create user
 	users, err := models.UserModel.GetUsersByUserIds([]string{document["create_user_id"], document["edit_user_id"]})
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(users) == 0 {
@@ -88,7 +91,7 @@ func (this *PageController) View() {
 	collectionId := "0"
 	collection, err := models.CollectionModel.GetCollectionByUserIdTypeAndResourceId(this.UserId, models.Collection_Type_Doc, documentId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("文档查找失败！")
 	}
 	if len(collection) > 0 {
@@ -116,7 +119,7 @@ func (this *PageController) Edit() {
 
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		this.ErrorLog("修改文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("修改文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("修改文档失败！")
 	}
 	if len(document) == 0 {
@@ -126,7 +129,7 @@ func (this *PageController) Edit() {
 	spaceId := document["space_id"]
 	space, err := models.SpaceModel.GetSpaceBySpaceId(spaceId)
 	if err != nil {
-		this.ErrorLog("修改文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("修改文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("修改文档失败！")
 	}
 	if len(space) == 0 {
@@ -141,14 +144,14 @@ func (this *PageController) Edit() {
 	// get parent documents by document
 	_, pageFile, err := models.DocumentModel.GetParentDocumentsByDocument(document)
 	if err != nil {
-		this.ErrorLog("查找父文档失败："+err.Error())
+		this.ErrorLog("查找父文档失败：" + err.Error())
 		this.ViewError("查找父文档失败！")
 	}
 
 	// get document content
 	documentContent, err := utils.Document.GetContentByPageFile(pageFile)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("文档不存在！")
 	}
 
@@ -171,7 +174,7 @@ func (this *PageController) Edit() {
 	this.viewLayout("page/edit", "document_page")
 }
 
-// page edit
+// page modify
 func (this *PageController) Modify() {
 
 	if !this.IsPost() {
@@ -201,7 +204,7 @@ func (this *PageController) Modify() {
 		this.jsonError("文档名称格式不正确！")
 	}
 	if newName == utils.Document_Default_FileName {
-		this.jsonError("文档名称不能为 "+ utils.Document_Default_FileName+" ！")
+		this.jsonError("文档名称不能为 " + utils.Document_Default_FileName + " ！")
 	}
 	if comment == "" {
 		this.jsonError("必须输入此次修改的备注！")
@@ -209,7 +212,7 @@ func (this *PageController) Modify() {
 
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		this.ErrorLog("修改文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("修改文档 " + documentId + " 失败：" + err.Error())
 		this.jsonError("保存文档失败！")
 	}
 	if len(document) == 0 {
@@ -219,7 +222,7 @@ func (this *PageController) Modify() {
 	spaceId := document["space_id"]
 	space, err := models.SpaceModel.GetSpaceBySpaceId(spaceId)
 	if err != nil {
-		this.ErrorLog("修改文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("修改文档 " + documentId + " 失败：" + err.Error())
 		this.jsonError("保存文档失败！")
 	}
 	if len(space) == 0 {
@@ -240,7 +243,7 @@ func (this *PageController) Modify() {
 		newDocument, err := models.DocumentModel.GetDocumentByNameParentIdAndSpaceId(newName,
 			document["parent_id"], document["space_id"], utils.Convert.StringToInt(document["type"]))
 		if err != nil {
-			this.ErrorLog("修改文档失败："+err.Error())
+			this.ErrorLog("修改文档失败：" + err.Error())
 			this.jsonError("保存文档失败！")
 		}
 		if len(newDocument) != 0 {
@@ -250,24 +253,28 @@ func (this *PageController) Modify() {
 
 	// update document and file content
 	updateValue := map[string]interface{}{
-		"name": newName,
+		"name":         newName,
 		"edit_user_id": this.UserId,
 	}
 	_, err = models.DocumentModel.UpdateDBAndFile(documentId, document, documentContent, updateValue, comment)
 	if err != nil {
-		this.ErrorLog("修改文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("修改文档 " + documentId + " 失败：" + err.Error())
 		this.jsonError("修改文档失败！")
 	}
 
 	// send email to follow user
 	if isNoticeUser == "1" {
-		go func(comment string, userId string, username string, ctx *context.Context) {
-			url := fmt.Sprintf("%s:%d/document/index?document_id=%s", ctx.Input.Site(), ctx.Input.Port(), documentId)
+		logInfo := this.GetLogInfoByCtx()
+		url := fmt.Sprintf("%s:%d/document/index?document_id=%s", this.Ctx.Input.Site(), this.Ctx.Input.Port(), documentId)
+		go func(documentId string, username string, comment string, url string) {
 			err := sendEmail(documentId, username, comment, url)
 			if err != nil {
-				models.LogModel.RecordLogByCtx(err.Error(), models.Log_Level_Error, userId, username, ctx)
+				logInfo["message"] = "更新文档时发送邮件通知失败：" + err.Error()
+				logInfo["level"] = models.Log_Level_Error
+				models.LogModel.Insert(logInfo)
+				beego.Error("更新文档时发送邮件通知失败：" + err.Error())
 			}
-		}(comment, this.UserId, this.User["username"], this.Ctx)
+		}(documentId, this.User["username"], comment, url)
 	}
 	// follow doc
 	if isFollowDoc == "1" {
@@ -276,7 +283,7 @@ func (this *PageController) Modify() {
 		}()
 	}
 
-	this.InfoLog("修改文档 "+documentId+" 成功")
+	this.InfoLog("修改文档 " + documentId + " 成功")
 	this.jsonSuccess("文档修改成功！", nil, "/document/index?document_id="+documentId)
 }
 
@@ -290,17 +297,33 @@ func (this *PageController) Display() {
 
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(document) == 0 {
 		this.ViewError("文档不存在！")
 	}
 
+	// get document space
+	spaceId := document["space_id"]
+	space, err := models.SpaceModel.GetSpaceBySpaceId(spaceId)
+	if err != nil {
+		this.ErrorLog("分享文档 " + documentId + " 失败：" + err.Error())
+		this.ViewError("保存文档失败！")
+	}
+	if len(space) == 0 {
+		this.ViewError("文档所在空间不存在！")
+	}
+
+	// check space is allow display
+	if space["is_share"] != fmt.Sprintf("%d", models.Space_Share_True) {
+		this.ViewError("该文档不能被分享！")
+	}
+
 	// get parent documents by document
 	parentDocuments, pageFile, err := models.DocumentModel.GetParentDocumentsByDocument(document)
 	if err != nil {
-		this.ErrorLog("查找父文档失败："+err.Error())
+		this.ErrorLog("查找父文档失败：" + err.Error())
 		this.ViewError("查找父文档失败！")
 	}
 	if len(parentDocuments) == 0 {
@@ -310,14 +333,14 @@ func (this *PageController) Display() {
 	// get document content
 	documentContent, err := utils.Document.GetContentByPageFile(pageFile)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 内容失败：" + err.Error())
 		this.ViewError("文档不存在！")
 	}
 
 	// get edit user and create user
 	users, err := models.UserModel.GetUsersByUserIds([]string{document["create_user_id"], document["edit_user_id"]})
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(users) == 0 {
@@ -343,6 +366,7 @@ func (this *PageController) Display() {
 	this.viewLayout("page/display", "document_share")
 }
 
+// export file
 func (this *PageController) Export() {
 
 	documentId := this.GetString("document_id", "")
@@ -352,7 +376,7 @@ func (this *PageController) Export() {
 
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(document) == 0 {
@@ -362,7 +386,7 @@ func (this *PageController) Export() {
 	spaceId := document["space_id"]
 	space, err := models.SpaceModel.GetSpaceBySpaceId(spaceId)
 	if err != nil {
-		this.ErrorLog("查找文档 "+documentId+" 所在空间失败："+err.Error())
+		this.ErrorLog("查找文档 " + documentId + " 所在空间失败：" + err.Error())
 		this.ViewError("查找文档失败！")
 	}
 	if len(space) == 0 {
@@ -372,22 +396,59 @@ func (this *PageController) Export() {
 	// check space document privilege
 	isVisit, _, _ := this.GetDocumentPrivilege(space)
 	if !isVisit {
-		this.jsonError("您没有权限导出该空间下文档！")
+		this.ViewError("您没有权限导出该空间下文档！")
+	}
+
+	// check space is allow export
+	if space["is_export"] != fmt.Sprintf("%d", models.Space_Download_True) {
+		this.ViewError("该文档不允许被导出！")
 	}
 
 	// get parent documents by document
 	parentDocuments, pageFile, err := models.DocumentModel.GetParentDocumentsByDocument(document)
 	if err != nil {
-		this.ErrorLog("查找父文档失败："+err.Error())
+		this.ErrorLog("查找父文档失败：" + err.Error())
 		this.ViewError("查找父文档失败！")
 	}
 	if len(parentDocuments) == 0 {
 		this.ViewError("父文档不存在！")
 	}
 
-	// get document file
+	packFiles := []*utils.CompressFileInfo{}
+
 	absPageFile := utils.Document.GetAbsPageFileByPageFile(pageFile)
-	this.Ctx.Output.Download(absPageFile, document["name"]+utils.Document_Page_Suffix)
+	// pack document file
+	packFiles = append(packFiles, &utils.CompressFileInfo{
+		File: absPageFile,
+		PrefixPath: "",
+	})
+
+	// get document attachments
+	attachments, err := models.AttachmentModel.GetAttachmentsByDocumentId(documentId)
+	if err != nil {
+		this.ErrorLog("查找文档附件失败：" + err.Error())
+		this.ViewError("查找文档附件失败！")
+	}
+	for _, attachment := range attachments {
+		if attachment["path"] == "" {
+			continue
+		}
+		path := attachment["path"]
+		attachmentFile := filepath.Join(app.DocumentAbsDir, path)
+		packFile := &utils.CompressFileInfo{
+			File: attachmentFile,
+			PrefixPath: filepath.Dir(path),
+		}
+		packFiles = append(packFiles, packFile)
+	}
+	var dest = fmt.Sprintf("%s/mm_wiki/%s.zip", os.TempDir(), document["name"])
+	err = utils.Zipx.PackFile(packFiles, dest)
+	if err != nil {
+		this.ErrorLog("导出文档附件失败：" + err.Error())
+		this.ViewError("导出文档失败！")
+	}
+
+	this.Ctx.Output.Download(dest, document["name"] + ".zip")
 }
 
 func sendEmail(documentId string, username string, comment string, url string) error {
@@ -395,13 +456,13 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	// get document by documentId
 	document, err := models.DocumentModel.GetDocumentByDocumentId(documentId)
 	if err != nil {
-		return errors.New("发送邮件通知查找文档失败："+err.Error())
+		return errors.New("发送邮件通知查找文档失败：" + err.Error())
 	}
 
 	// get send email open config
 	sendEmailConfig, err := models.ConfigModel.GetConfigByKey(models.Config_Key_SendEmail)
 	if err != nil {
-		return errors.New("发送邮件通知查找发送邮件配置失败："+err.Error())
+		return errors.New("发送邮件通知查找发送邮件配置失败：" + err.Error())
 	}
 	if len(sendEmailConfig) == 0 {
 		return nil
@@ -413,7 +474,7 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	// get email config
 	emailConfig, err := models.EmailModel.GetUsedEmail()
 	if err != nil {
-		return errors.New("发送邮件通知查找邮件服务器配置失败："+err.Error())
+		return errors.New("发送邮件通知查找邮件服务器配置失败：" + err.Error())
 	}
 	if len(emailConfig) == 0 {
 		return nil
@@ -422,7 +483,7 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	// get follow doc user
 	follows, err := models.FollowModel.GetFollowsByObjectIdAndType(documentId, models.Follow_Type_Doc)
 	if err != nil {
-		return errors.New("发送邮件查找关注文档用户失败："+err.Error())
+		return errors.New("发送邮件查找关注文档用户失败：" + err.Error())
 	}
 	if len(follows) == 0 {
 		return nil
@@ -433,7 +494,7 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	}
 	users, err := models.UserModel.GetUsersByUserIds(userIds)
 	if err != nil {
-		return errors.New("发送邮件查找关注文档用户失败："+err.Error())
+		return errors.New("发送邮件查找关注文档用户失败：" + err.Error())
 	}
 	if len(users) == 0 {
 		return nil
@@ -448,7 +509,7 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	// get parent documents by document
 	parentDocuments, pageFile, err := models.DocumentModel.GetParentDocumentsByDocument(document)
 	if err != nil {
-		return errors.New("查找文档内容失败: "+err.Error())
+		return errors.New("查找文档内容失败: " + err.Error())
 	}
 	if len(parentDocuments) == 0 {
 		return errors.New("查找文档内容失败")
@@ -456,7 +517,7 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	// get document content
 	documentContent, err := utils.Document.GetContentByPageFile(pageFile)
 	if err != nil {
-		return errors.New("查找文档内容失败: "+err.Error())
+		return errors.New("查找文档内容失败: " + err.Error())
 	}
 
 	if len([]byte(documentContent)) > 500 {
@@ -469,11 +530,11 @@ func sendEmail(documentId string, username string, comment string, url string) e
 	documentValue["comment"] = comment
 	documentValue["url"] = url
 
-	emailTemplate := beego.BConfig.WebConfig.ViewsPath+"system/email/template.html"
+	emailTemplate := beego.BConfig.WebConfig.ViewsPath + "system/email/template.html"
 	body, err := utils.Email.MakeDocumentHtmlBody(documentValue, emailTemplate)
 	if err != nil {
-		return errors.New("发送邮件生成模板失败："+err.Error())
+		return errors.New("发送邮件生成模板失败：" + err.Error())
 	}
 	// start send email
-	return utils.Email.SendByEmail(emailConfig, emails, "文档更新通知", body ,"html")
+	return utils.Email.Send(emailConfig, emails, "文档更新通知", body)
 }

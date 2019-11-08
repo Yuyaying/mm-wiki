@@ -1,23 +1,28 @@
 package main
 
 import (
-	"mm-wiki/install/controllers"
-	"net/http"
-	"mm-wiki/app/utils"
 	"github.com/astaxie/beego"
+	"mm-wiki/app/utils"
+	"mm-wiki/install/controllers"
+	"mm-wiki/install/storage"
+	"net/http"
+	"os"
+	"path/filepath"
 )
 
 func init() {
+
+	storage.InstallDir, _ = filepath.Abs(filepath.Dir(os.Args[0]))
+	storage.RootDir = filepath.Join(storage.InstallDir, "../")
 
 	beego.AppConfig.Set("sys.name", "mm-wiki-installer")
 	beego.BConfig.AppName = beego.AppConfig.String("sys.name")
 	beego.BConfig.ServerName = beego.AppConfig.String("sys.name")
 
 	// set static path
-	beego.SetStaticPath("/static/", "../static")
-
+	beego.SetStaticPath("/static/", filepath.Join(storage.InstallDir, "../static"))
 	// views path
-	beego.BConfig.WebConfig.ViewsPath = "../views/"
+	beego.BConfig.WebConfig.ViewsPath = filepath.Join(storage.InstallDir, "../views/")
 
 	// session
 	beego.BConfig.WebConfig.Session.SessionName = "mmwikiinstallssid"

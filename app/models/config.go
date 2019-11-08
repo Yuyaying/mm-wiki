@@ -8,15 +8,15 @@ import (
 const Table_Config_Name = "config"
 
 const (
-	Config_Key_MainTitle = "main_title"
+	Config_Key_MainTitle       = "main_title"
 	Config_Key_MainDescription = "main_description"
-	Config_Key_AutoFollowDoc = "auto_follow_doc_open"
-	Config_Key_SendEmail = "send_email_open"
-	Config_Key_AuthLogin = "sso_open"
+	Config_Key_AutoFollowDoc   = "auto_follow_doc_open"
+	Config_Key_SendEmail       = "send_email_open"
+	Config_Key_AuthLogin       = "sso_open"
+	Config_Key_SystemVersion   = "system_version"
 )
 
 type Config struct {
-	
 }
 
 var ConfigModel = Config{}
@@ -26,7 +26,7 @@ func (c *Config) GetConfigByConfigId(configId string) (config map[string]string,
 	db := G.DB()
 	var rs *mysql.ResultSet
 	rs, err = db.Query(db.AR().From(Table_Config_Name).Where(map[string]interface{}{
-		"config_id":   configId,
+		"config_id": configId,
 	}))
 	if err != nil {
 		return
@@ -39,9 +39,9 @@ func (c *Config) GetConfigByConfigId(configId string) (config map[string]string,
 func (c *Config) Update(configId string, configValue map[string]interface{}) (id int64, err error) {
 	db := G.DB()
 	var rs *mysql.ResultSet
-	configValue["update_time"] =  time.Now().Unix()
+	configValue["update_time"] = time.Now().Unix()
 	rs, err = db.Exec(db.AR().Update(Table_Config_Name, configValue, map[string]interface{}{
-		"config_id":   configId,
+		"config_id": configId,
 	}))
 	if err != nil {
 		return
@@ -56,7 +56,7 @@ func (c *Config) UpdateByKey(key string, value string) (id int64, err error) {
 	var rs *mysql.ResultSet
 	configValue := map[string]interface{}{}
 	configValue["value"] = value
-	configValue["update_time"] =  time.Now().Unix()
+	configValue["update_time"] = time.Now().Unix()
 	rs, err = db.Exec(db.AR().Update(Table_Config_Name, configValue, map[string]interface{}{
 		"key": key,
 	}))
@@ -86,7 +86,7 @@ func (c *Config) GetConfigByConfigIds(configIds []string) (configs []map[string]
 	db := G.DB()
 	var rs *mysql.ResultSet
 	rs, err = db.Query(db.AR().From(Table_Config_Name).Where(map[string]interface{}{
-		"config_id":   configIds,
+		"config_id": configIds,
 	}))
 	if err != nil {
 		return
@@ -101,6 +101,21 @@ func (c *Config) InsertBatch(insertValues []map[string]interface{}) (id int64, e
 	db := G.DB()
 	var rs *mysql.ResultSet
 	rs, err = db.Exec(db.AR().InsertBatch(Table_Config_Name, insertValues))
+	if err != nil {
+		return
+	}
+	id = rs.LastInsertId
+	return
+}
+
+// insert config
+func (c *Config) Insert(insertValue map[string]interface{}) (id int64, err error) {
+
+	insertValue["create_time"] = time.Now().Unix()
+	insertValue["update_time"] = time.Now().Unix()
+	db := G.DB()
+	var rs *mysql.ResultSet
+	rs, err = db.Exec(db.AR().Insert(Table_Config_Name, insertValue))
 	if err != nil {
 		return
 	}

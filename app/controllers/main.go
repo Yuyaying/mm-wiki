@@ -12,7 +12,7 @@ func (this *MainController) Index() {
 
 	collectDocs, err := models.CollectionModel.GetCollectionsByUserIdAndType(this.UserId, models.Collection_Type_Doc)
 	if err != nil {
-		this.ErrorLog("查找收藏文档错误: "+err.Error())
+		this.ErrorLog("查找收藏文档错误: " + err.Error())
 		this.ViewError("查找收藏文档错误！")
 	}
 	docIds := []string{}
@@ -22,7 +22,7 @@ func (this *MainController) Index() {
 
 	documents, err := models.DocumentModel.GetDocumentsByDocumentIds(docIds)
 	if err != nil {
-		this.ErrorLog("查找收藏文档错误: "+err.Error())
+		this.ErrorLog("查找收藏文档错误: " + err.Error())
 		this.ViewError("查找收藏文档错误！")
 	}
 
@@ -34,25 +34,26 @@ func (this *MainController) Index() {
 func (this *MainController) Default() {
 
 	page, _ := this.GetInt("page", 1)
+	number, _ := this.GetInt("number", 10)
 	maxPage := 10
 	if page >= maxPage {
 		page = maxPage
 	}
-	number := 8
+	//number := 8
 	limit := (page - 1) * number
 
 	logDocuments, err := models.LogDocumentModel.GetLogDocumentsByLimit(limit, number)
 	if err != nil {
-		this.ErrorLog("查找更新文档列表失败："+err.Error())
+		this.ErrorLog("查找更新文档列表失败：" + err.Error())
 		this.ViewError("查找更新文档列表失败！")
 	}
 
 	count, err := models.LogDocumentModel.CountLogDocuments()
 	if err != nil {
-		this.ErrorLog("查找更新文档总数失败："+err.Error())
+		this.ErrorLog("查找更新文档总数失败：" + err.Error())
 		this.ViewError("查找更新文档列表失败！")
 	}
-	if count >= int64(maxPage * number) {
+	if count >= int64(maxPage*number) {
 		count = int64(maxPage * number)
 	}
 
@@ -64,12 +65,12 @@ func (this *MainController) Default() {
 	}
 	users, err := models.UserModel.GetUsersByUserIds(userIds)
 	if err != nil {
-		this.ErrorLog("查找更新文档用户失败："+err.Error())
+		this.ErrorLog("查找更新文档用户失败：" + err.Error())
 		this.ViewError("查找更新文档列表失败！")
 	}
 	docs, err := models.DocumentModel.GetAllDocumentsByDocumentIds(docIds)
 	if err != nil {
-		this.ErrorLog("查找文档信息失败："+err.Error())
+		this.ErrorLog("查找文档信息失败：" + err.Error())
 		this.ViewError("查找更新文档列表失败！")
 	}
 	for _, logDocument := range logDocuments {
@@ -93,14 +94,14 @@ func (this *MainController) Default() {
 	// link
 	links, err := models.LinkModel.GetLinksOrderBySequence()
 	if err != nil {
-		this.ErrorLog("查找快速链接失败："+err.Error())
-		this.ViewError("查找快速链接失败！")
+		this.ErrorLog("查找快捷链接失败：" + err.Error())
+		this.ViewError("查找快捷链接失败！")
 	}
 	// contacts
 	contacts, err := models.ContactModel.GetAllContact()
 	if err != nil {
-		this.ErrorLog("查找快速链接失败："+err.Error())
-		this.ViewError("查找快速链接失败！")
+		this.ErrorLog("查找快捷链接失败：" + err.Error())
+		this.ViewError("查找快捷链接失败！")
 	}
 
 	// main title config
@@ -108,16 +109,16 @@ func (this *MainController) Default() {
 	mainDescription := ""
 	mainTitleConfig, err := models.ConfigModel.GetConfigByKey(models.Config_Key_MainTitle)
 	if err != nil {
-		this.ErrorLog("查找 main_title 配置失败："+err.Error())
-	}else {
+		this.ErrorLog("查找 main_title 配置失败：" + err.Error())
+	} else {
 		if len(mainTitleConfig) > 0 {
 			mainTitle = mainTitleConfig["value"]
 		}
 	}
 	mainDescriptionConfig, err := models.ConfigModel.GetConfigByKey(models.Config_Key_MainDescription)
 	if err != nil {
-		this.ErrorLog("查找 main_description 配置失败："+err.Error())
-	}else {
+		this.ErrorLog("查找 main_description 配置失败：" + err.Error())
+	} else {
 		if len(mainDescriptionConfig) > 0 {
 			mainDescription = mainDescriptionConfig["value"]
 		}
@@ -140,8 +141,7 @@ func (this *MainController) Search() {
 
 	page, _ := this.GetInt("page", 1)
 	documentName := this.GetString("document_name", "")
-
-	number := 15
+	number, _ := this.GetRangeInt("number", 20, 10, 100)
 	limit := (page - 1) * number
 
 	var documents = []map[string]string{}
@@ -151,13 +151,13 @@ func (this *MainController) Search() {
 	if documentName != "" {
 		count, err = models.DocumentModel.CountDocumentsLikeName(documentName)
 		if err != nil {
-			this.ErrorLog("搜索文档总数出错："+err.Error())
+			this.ErrorLog("搜索文档总数出错：" + err.Error())
 			this.ViewError("搜索文档错误！")
 		}
 		if count > 0 {
 			documents, err = models.DocumentModel.GetDocumentsByLikeNameAndLimit(documentName, limit, number)
 			if err != nil {
-				this.ErrorLog("搜索文档列表出错："+err.Error())
+				this.ErrorLog("搜索文档列表出错：" + err.Error())
 				this.ViewError("搜索文档错误！")
 			}
 		}

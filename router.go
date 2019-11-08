@@ -2,14 +2,15 @@ package main
 
 import (
 	"github.com/astaxie/beego"
+	"html/template"
+	"mm-wiki/app"
 	"mm-wiki/app/controllers"
 	systemControllers "mm-wiki/app/modules/system/controllers"
 	"mm-wiki/app/utils"
 	"net/http"
-	"html/template"
 )
 
-func init()  {
+func init() {
 	initRouter()
 }
 
@@ -29,6 +30,7 @@ func initRouter() {
 	beego.AutoRouter(&controllers.DocumentController{})
 	beego.AutoRouter(&controllers.PageController{})
 	beego.AutoRouter(&controllers.ImageController{})
+	beego.AutoRouter(&controllers.AttachmentController{})
 
 	systemNamespace := beego.NewNamespace("/system",
 		beego.NSAutoRouter(&systemControllers.MainController{}),
@@ -52,18 +54,21 @@ func initRouter() {
 	beego.ErrorHandler("500", http_500)
 
 	// add template func
-	beego.AddFuncMap("dateFormat", utils.NewDate().Format)
+	beego.AddFuncMap("dateFormat", utils.Date.Format)
 }
 
 func http_404(rw http.ResponseWriter, req *http.Request) {
-	t,_:= template.New("404.html").ParseFiles(beego.BConfig.WebConfig.ViewsPath+"/error/404.html")
+	t, _ := template.New("404.html").ParseFiles(beego.BConfig.WebConfig.ViewsPath + "/error/404.html")
 	data := make(map[string]interface{})
 	data["content"] = "page not found"
+	data["copyright"] = app.CopyRight
 	t.Execute(rw, data)
 }
 
 func http_500(rw http.ResponseWriter, req *http.Request) {
 	t, _ := template.New("500.html").ParseFiles(beego.BConfig.WebConfig.ViewsPath + "/error/500.html")
 	data := make(map[string]interface{})
+	data["content"] = "Server Error"
+	data["copyright"] = app.CopyRight
 	t.Execute(rw, data)
 }
