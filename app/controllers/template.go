@@ -6,12 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"mm-wiki/app"
-	"mm-wiki/app/models"
-	"mm-wiki/app/utils"
+	"github.com/phachon/mm-wiki/app"
+	"github.com/phachon/mm-wiki/app/models"
+	"github.com/phachon/mm-wiki/app/utils"
 
 	"github.com/astaxie/beego"
-
 )
 
 type TemplateController struct {
@@ -109,6 +108,7 @@ func (this *TemplateController) isLogin() bool {
 
 	this.Data["login_user_id"] = this.UserId
 	this.Data["login_username"] = this.User["username"]
+	this.Data["login_role_id"] = this.User["role_id"]
 
 	// success
 	return true
@@ -265,6 +265,7 @@ func (this *TemplateController) IsGet() bool {
 	return this.Ctx.Input.Method() == "GET"
 }
 
+// 是否是超级管理员
 func (this *TemplateController) IsRoot() bool {
 	return this.User["role_id"] == fmt.Sprintf("%d", models.Role_Root_Id)
 }
